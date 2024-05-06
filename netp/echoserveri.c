@@ -1,6 +1,5 @@
 #include "csapp.h"
-
-void echo(int connfd);//TODO
+void echo(int connfd);
 
 int main(int argc, char** argv)
 {
@@ -8,7 +7,7 @@ int main(int argc, char** argv)
     socklen_t clientlen;
     struct sockaddr_storage clientaddr;
     char client_hostname[MAXLINE], client_port[MAXLINE];
-
+    
     if (argc != 2) {
         fprintf(stderr, "usage: %s <port>\n", argv[0]);
         exit(0);
