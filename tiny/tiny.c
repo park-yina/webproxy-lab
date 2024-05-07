@@ -63,7 +63,7 @@ doit(int fd) {
     }
 
 }
-void read_requesthdrs(rio_t* rp) {
+read_requesthdrs(rio_t* rp) {
     char buf[MAXLINE];
 
     /* 요청 헤더 한 줄씩 읽기 */
@@ -99,7 +99,31 @@ parse_uri(char* uri, char* filename, char* cgiargs) {
         return 0;
     }
 }
+serve_static(int fd, char* filename, int filesize) {
+    int srcfd;
+    char* srcp, filetype[MAXLINE], buf[MAXBUF];
+    get_filetype(filename, filetype);
+    sprintf(buf, "200 OK\r\n");
+    sprintf(buf, "%sServer : Tiny Web Server \r\n", buf);
+    sprintf(buf, "%sConnection : close \r\n", buf);
+    sprintf(buf, "%sConnect-length : %d \r\n", buf, filesize);
+    sprintf(buf, "%sContent-type : %s \r\n\r\n", buf, filetype);
+    Rio_writen(fd, buf, strlen(buf));
+    printf("Response Header:\n");
+    printf("%s", buf);
+    if (!strcasecmp(method, "HEAD"))
+        return;
+    srcfd = Open(filename, O_RDONLY, 0); //open read only 읽고
+    srcp = (char*)Malloc(filesize);
+    Rio_readn(srcfd, srcp, filesize);
 
+    Close(srcfd); // 닫기
+
+
+    Rio_writen(fd, srcp, filesize);
+    free(srcp);
+
+}
 int main(int argc, char **argv) {
   int listenfd, connfd;
   char hostname[MAXLINE], port[MAXLINE];
