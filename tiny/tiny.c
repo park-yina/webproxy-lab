@@ -124,6 +124,66 @@ serve_static(int fd, char* filename, int filesize) {
     free(srcp);
 
 }
+get_filetype(char* filename, char* filetype) {
+    if (strstr(filename, ".html")) {
+        strcpy(filetype, "text/html");
+    }
+    else if (strstr(filename, ".gif")) {
+        strcpy(filetype, "image/gif");
+    }
+    else if (strstr(filename, ".png")) {
+        strcpy(filename, "image/.png");
+    }
+    else if (strstr(filename, ".jpg")) {
+        strcpy(filetype, "image/jpeg");
+    }
+    else if (strstr(filename, ".mp4")) {
+     strcpy(filetype, "video/mp4");
+    }
+    else {
+     strcpy(filetype, "text/plain");
+    }
+}
+void serve_dynamic(int fd, char* filename, char* cgiargs) {
+    char buf[MAXLINE];
+    char* emptylist[] = { NULL };
+
+    sprintf(buf, "HTTP/1.0 200 OK\r\n");
+    Rio_writen(fd, buf, strlen(buf));
+
+    sprintf(buf, "Server: Tiny Web Server\r\n");
+    Rio_writen(fd, buf, strlen(buf));
+
+    if (!strcasecmp(method, "HEAD"))
+        return;
+
+    /* 자식 프로세스 생성 */
+    if (Fork() == 0) {
+        /* CGI 환경 변수 설정 */
+        setenv("Query_String", cgiargs, 1);
+
+        Dup2(fd, STDOUT_FILENO);
+
+        Execve(filename, emptylist, environ);
+    }
+    Wait(NULL);
+}
+clienterror(int fd, char* cause, char* errnum, char* shortmsg,char* longmsg) {
+    char buf[MAXLINE], body[MAXBUF];
+    sprintf(body, "<html><title>Tiny Error</title>");
+    sprintf(body, "%s<body bgcolor=""ffffff"">\r\n", body);
+    sprintf(body, "%s%s: %s\r\n", body, errnum, shortmsg);
+    sprintf(body, "%s<p>%s: %s\r\n", body, longmsg, cause);
+    sprintf(body, "%s<hr><em>The Tiny Web server</em>\r\n", body);
+
+    sprintf(buf, "HTTP/1.0 %s %s\r\n", errnum, shortmsg);
+    Rio_writen(fd, buf, strlen(buf));
+    sprintf(buf, "Content-type: text/html\r\n");
+    Rio_writen(fd, buf, strlen(buf));
+    sprintf(buf, "Content-length: %d\r\n\r\n", (int)strlen(body));
+    Rio_writen(fd, buf, strlen(buf));
+    Rio_writen(fd, body, strlen(body));
+}
 int main(int argc, char **argv) {
   int listenfd, connfd;
   char hostname[MAXLINE], port[MAXLINE];
@@ -147,4 +207,3 @@ int main(int argc, char **argv) {
     doit(connfd);   // line:netp:tiny:doit
     Close(connfd);  // line:netp:tiny:close
   }
-}
